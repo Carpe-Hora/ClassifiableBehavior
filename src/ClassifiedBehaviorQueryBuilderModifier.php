@@ -141,31 +141,50 @@ EOF;
     $script = <<<EOF
 /**
  * Adds a filter on classification for this query.
+ * if several namespaces are provided, then assume this is ANY of the matches.
+ *
+ * // find *big* AND *blue* objects
+ * ->filterByClassified('size', 'big');
+ * ->filterByClassified('color', 'blue');
+ *
+ * // find *big* OR *blue* objects
+ * ->filterByClassified(array(
+ *        'size' => 'big',
+ *        'color' => 'blue',));
+ *
+ * // filter *big* OR *small*
+ * ->filterByClassified('size', array('big', 'small') 'OR', \$exclude_disclosed = true)
  *
  * @param String  \$namespace        classification \$namespace.
  * @param String  \$classification   classification name if namespace is provided.
- * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace.
  * @param String  \$operator         operator to use for search combination ('OR', AND', 'XOR').
+ * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
  * @return {$this->getActiveQueryClassname()}
  */
-public function filterByClassified(\$namespace, \$classifications = null, \$paranoid = true, \$operator = 'and')
+public function filterByClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
 {
   \$uid = 'classified_'.uniqid();
-  if (!is_null(\$classifications) && (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {
-    \$operator = \$paranoid;
-    \$paranoid = \$classifications;
+  \$conditions = array();
+  if (!is_null(\$classifications) &&
+      (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {
+    \$paranoid = \$operator;
+    \$operator = \$classifications;
+    \$classifications = null;
   }
   \$classifications = \$this->prepareClassifications(\$namespace, \$classifications);
-  if (!\$paranoid) {
-    \$this->conditionForEmptyScope(\$namespace, \$uid . '_paranoid');
-    \$this->conditionForClassified(\$classifications, \$operator, \$uid . '_values');
-    return \$this->where(array(\$uid . '_paranoid', \$uid . '_values'), 'OR');
-  }
+  foreach (\$classifications as \$ns => \$classes) {
+    \$cond = \$ns . '_' . \$uid;
+    if (!\$paranoid) {
+      \$this->conditionForDisclosed(\$ns, \$cond . '_paranoid');
+      \$conditions[] = \$cond . '_paranoid';
+    }
 
-  // not paranoid
-  return \$this
-      ->conditionForClassified(\$classifications, \$operator, \$uid)
-      ->where(array(\$uid), 'AND');
+    // paranoid
+    \$conditions[] = \$cond;
+    \$this
+        ->conditionForClassified(\$classes, \$operator, \$cond);
+  }
+  return \$this->where(\$conditions, 'OR');
 }
 
 /**
@@ -179,7 +198,7 @@ public function filterByDisclosed(\$namespace)
   \$uid = 'disclosed_'.uniqid();
 
   return \$this
-      ->conditionForEmptyScope(\$namespace, \$uid)
+      ->conditionForDisclosed(\$namespace, \$uid)
       ->where(array(\$uid), 'AND');
 }
 
@@ -190,7 +209,7 @@ public function filterByDisclosed(\$namespace)
  * @param String  \$condition_name name to use for created condition.
  * @return {$this->getActiveQueryClassname()}
  */
-protected function conditionForEmptyScope(\$namespace, \$condition_name)
+protected function conditionForDisclosed(\$namespace, \$condition_name)
 {
   \$namespace = {$this->peerClassname}::normalizeScopeName(\$namespace);
   \$alias = 'empty_ns_'.uniqid();
@@ -203,22 +222,25 @@ EOF;
         $pks .= " '. \$alias . '_link.". $this->behavior->getTable()->getCommonname() ."_". $column->getName() ."";
       }
       $script .=<<<EOF
-  return \$this->condition(\$condition_name,
-      'NOT EXISTS ('."\n".
-        'SELECT {$pks} FROM {$this->getParameter('classification_table')} '. \$alias . ' '."\n".
-        'JOIN {$this->getClassifiactionLinkTableCommonname()} '. \$alias . '_link '."\n".
-        'ON ('. \$alias . '.id = '. \$alias . '_link.{$this->getParameter('classification_table')}_id  '."\n".
+  \$sql_condition = 'NOT EXISTS ('."\n".
+        'SELECT {$pks} FROM {$this->getClassifiactionLinkTableCommonname()} '. \$alias . '_link '."\n".
+        'JOIN {$this->getParameter('classification_table')} '. \$alias . ' '."\n".
+        'ON ('. \$alias . '.id = '. \$alias . '_link.{$this->getParameter('classification_table')}_id '.
 EOF;
+    // @todo optimize to check id first
     foreach($this->behavior->getTable()->getPrimaryKey() as $key => $column) {
       $script .=<<<EOF
             'AND '. \$alias . '_link.{$this->behavior->getTable()->getCommonname()}_{$column->getName()} = ' . \$table_name . '.{$column->getName()} '."\n".
 EOF;
     }
     $script .= <<<EOF
-        ')'."\n".
-        'WHERE '. \$alias .'.{$this->getParameter('scope_column')} = ? '."\n".
-        'GROUP BY {$pks}' .
-        ')', \$namespace, PDO::PARAM_STR);
+        ') '."\n".
+        'WHERE ( '.
+            \$alias .'.{$this->getParameter('scope_column')} = ? '."\n".
+        ') GROUP BY {$pks}' .
+        ')';
+
+  return \$this->condition(\$condition_name, \$sql_condition, \$namespace, PDO::PARAM_STR);
 }
 
 /**
@@ -230,29 +252,47 @@ EOF;
 protected function conditionForClassified(\$classifications, \$operator, \$cond_name)
 {
   \$conditions = array();
+  if(is_array(\$classifications) || \$classifications instanceof PropelCollection) {
+    if (count(\$classifications) === 0) {
+      return \$this;
+    }
+    if (count(\$classifications) > 1) {
+      \$count  = 0;
+      \$cond = 'classified_'.uniqid();
+      foreach (\$classifications as \$classification) {
+        \$conditions[] = \$cond . '_' . (++\$count);
+        \$this->conditionForClassified(\$classification, \$operator, \$cond . '_' . \$count);
+      }
+      return \$this->combine(\$conditions, \$operator, \$cond_name);
+    }
+
+    \$classifications = array_pop(\$classifications);
+  }
+
+
   \$alias = 'empty_ns_'.uniqid();
   \$table_name = \$this->getModelAliasOrName() === '{$this->getActiveRecordClassname()}'
                     ? '{$this->behavior->getTable()->getCommonname()}'
                     : \$this->getModelAliasOrName();
   \$query = {$this->getClassificationLinkActiveQueryClassname()}::create(\$alias)
+
 EOF;
     foreach($this->behavior->getTable()->getPrimaryKey() as $key => $column) {
       $script .=<<<EOF
         ->addUsingOperator(new Criterion(\$this, null, \$alias.'.{$this->behavior->getTable()->getCommonname()}_{$column->getName()} = ' . \$table_name . '.{$column->getName()}', Criteria::CUSTOM), null, null)
+
 EOF;
     }
     $script .= <<<EOF
   ;
-  // now create conditions
-  foreach(\$classifications as \$classification) {
 EOF;
       foreach($this->getClassificationTable()->getPrimaryKey() as $key => $column) {
         $script .=<<<EOF
-    \$conditions[] = \$alias . '.{$this->getClassificationTable()->getCommonname()}_{$column->getName()} = ' . (int) \$classification->get{$column->getPhpName()}();
+  \$conditions[] = \$alias . '.{$this->getClassificationTable()->getCommonname()}_{$column->getName()} = ' . \$classifications->get{$column->getPhpName()}();
+
 EOF;
     }
       $script .=<<<EOF
-  }
 
   \$params = array();
   \$sql = BasePeer::createSelectSql(\$query, \$params);
@@ -287,9 +327,12 @@ protected function prepareClassifications(\$namespace, \$classifications = null)
 
   foreach (\$classifications as \$key => \$classification) {
     \$ns = is_null(\$namespace) ? \$key : \$namespace;
+    if (!isset(\$ret[\$ns])) {
+      \$ret[\$ns] = array();
+    }
     if (\$classification instanceof {$this->getClassificationActiveRecordClassname()})
     {
-      \$ret[] = \$classification;
+      \$ret[\$ns][] = \$classification;
     }
     elseif(is_array(\$classification) || (\$classification instanceof PropelCollection)) {
       \$ret = array_merge(\$ret, \$this->prepareClassifications(\$ns, \$classification));
@@ -305,7 +348,7 @@ protected function prepareClassifications(\$namespace, \$classifications = null)
         throw new Exception(sprintf('Unknown category %s/%s', \$ns, \$classification));
       }
 
-      \$ret[] = \$c;
+      \$ret[\$ns][] = \$c;
     }
   }
 
