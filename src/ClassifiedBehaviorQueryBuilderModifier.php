@@ -148,9 +148,14 @@ EOF;
  * @param String  \$operator         operator to use for search combination ('OR', AND', 'XOR').
  * @return {$this->getActiveQueryClassname()}
  */
-public function filterByClassified(\$namespace, \$classifications, \$paranoid = true, \$operator = 'and')
+public function filterByClassified(\$namespace, \$classifications = null, \$paranoid = true, \$operator = 'and')
 {
   \$uid = 'classified_'.uniqid();
+  if (!is_null(\$classifications) && (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {
+    \$operator = \$paranoid;
+    \$paranoid = \$classifications;
+  }
+  \$classifications = \$this->prepareClassifications(\$namespace, \$classifications);
   if (!\$paranoid) {
     \$this->conditionForEmptyScope(\$namespace, \$uid . '_paranoid');
     \$this->conditionForClassified(\$classifications, \$operator, \$uid . '_values');
@@ -187,6 +192,7 @@ public function filterByDisclosed(\$namespace)
  */
 protected function conditionForEmptyScope(\$namespace, \$condition_name)
 {
+  \$namespace = {$this->peerClassname}::normalizeScopeName(\$namespace);
   \$alias = 'empty_ns_'.uniqid();
   \$table_name = \$this->getModelAliasOrName() === '{$this->getActiveRecordClassname()}'
                     ? '{$this->behavior->getTable()->getCommonname()}'
@@ -215,12 +221,15 @@ EOF;
         ')', \$namespace, PDO::PARAM_STR);
 }
 
+/**
+ * create condition for classified content filtering.
+ *
+ * @param {$this->getClassificationActiveRecordClassname()} \$classifications classification object, collection or array to filter against
+ * @return {$this->getActiveQueryClassname()}
+ */
 protected function conditionForClassified(\$classifications, \$operator, \$cond_name)
 {
   \$conditions = array();
-  if(!is_array(\$classifications)) {
-    \$classifications = array(\$classifications);
-  }
   \$alias = 'empty_ns_'.uniqid();
   \$table_name = \$this->getModelAliasOrName() === '{$this->getActiveRecordClassname()}'
                     ? '{$this->behavior->getTable()->getCommonname()}'
@@ -255,6 +264,52 @@ EOF;
                   'AND ('.join(sprintf(' %s ', \$operator), \$conditions) . ')' ."\n".
                 ')';
   return \$this->condition(\$cond_name, \$condition);
+}
+
+/**
+ * retrieve the classification list.
+ * prepareClassifications(array('ns' => array('class1', 'class2', 'class3')))
+ * prepareClassifications('ns', array('class1', 'class2', 'class3'))
+ * prepareClassifications('ns', 'class1')
+ *
+ * @return array
+ */
+protected function prepareClassifications(\$namespace, \$classifications = null)
+{
+  \$ret = array();
+  if (is_null(\$classifications)) {
+    \$classifications = \$namespace;
+    \$namespace = null;
+  }
+  if(!is_array(\$classifications) && !(\$classifications instanceof PropelCollection)) {
+    \$classifications = array(\$classifications);
+  }
+
+  foreach (\$classifications as \$key => \$classification) {
+    \$ns = is_null(\$namespace) ? \$key : \$namespace;
+    if (\$classification instanceof {$this->getClassificationActiveRecordClassname()})
+    {
+      \$ret[] = \$classification;
+    }
+    elseif(is_array(\$classification) || (\$classification instanceof PropelCollection)) {
+      \$ret = array_merge(\$ret, \$this->prepareClassifications(\$ns, \$classification));
+    }
+    else {
+      // well retrieve it.
+      // @todo optimize the retrieval...
+      \$c = {$this->getClassificationActiveQueryClassname()}::create()
+        ->{$this->getFilterByClassificationColumnForParameter('scope_column')}({$this->peerClassname}::normalizeScopeName(\$ns))
+        ->{$this->getFilterByClassificationColumnForParameter('classification_column')}({$this->peerClassname}::normalizeClassificationName(\$classification))
+        ->findOne();
+      if (!\$c) {
+        throw new Exception(sprintf('Unknown category %s/%s', \$ns, \$classification));
+      }
+
+      \$ret[] = \$c;
+    }
+  }
+
+  return \$ret;
 }
 EOF;
     return $script;

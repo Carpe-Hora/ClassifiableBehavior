@@ -171,4 +171,110 @@ EOF;
 
     $this->assertEquals(0, count($disclosedAdultPics));
   }
+
+  protected function prepareProtectedMethod($class, $method)
+  {
+    $class = new ReflectionClass($class);
+    $method = $class->getMethod($method);
+    $method->setAccessible(true);
+    return $method;
+  }
+
+  public function testNormalizeValues()
+  {
+    $this->assertEquals('foo', ClassifiedBehaviorTest1Peer::normalizeScopeName('foo'));
+    $this->assertEquals('bar', ClassifiedBehaviorTest1Peer::normalizeClassificationName('bar'));
+  }
+
+  public function testPrepareClassifications()
+  {
+    $class = array(
+      'audience' => array(
+          'adult' => ClassificationQuery::create()->filterByScope('audience')->filterByClassification('adult')->findOne(),
+          'kid' => ClassificationQuery::create()->filterByScope('audience')->filterByClassification('kid')->findOne(),),
+      'size' => array(
+          'small' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('small')->findOne(),
+          'medium' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('medium')->findOne(),
+          'big' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('big')->findOne(),),
+    );
+
+    $q = ClassifiedBehaviorTest1Query::create();
+    $prepareClassifiactionsMethod = $this->prepareProtectedMethod('ClassifiedBehaviorTest1Query', 'prepareClassifications');
+
+    // $q->prepareClassifications(array('audience' => array('adult', 'kid'), 'size' => array('small')));
+    $res = $prepareClassifiactionsMethod->invokeArgs($q, array(array('audience' => array('adult', 'kid'), 'size' => array('small'))));
+    $this->assertEquals(3, count($res));
+    $this->assertEquals('audience', $res[0]->getScope());
+    $this->assertEquals('adult', $res[0]->getClassification());
+    $this->assertEquals('audience', $res[1]->getScope());
+    $this->assertEquals('kid', $res[1]->getClassification());
+    $this->assertEquals('size', $res[2]->getScope());
+    $this->assertEquals('small', $res[2]->getClassification());
+    // $q->prepareClassifications('audience', array('adult', 'kid'));
+    $res = $prepareClassifiactionsMethod->invokeArgs($q, array('audience', array('adult', 'kid')));
+    $this->assertSame(array($class['audience']['adult'], $class['audience']['kid']), $res);
+    // $q->prepareClassifications('audience', 'kid');
+    $res = $prepareClassifiactionsMethod->invokeArgs($q, array('audience', 'kid'));
+    $this->assertSame(array($class['audience']['kid']), $res);
+  }
+
+  public function testFilterByClassificationNames()
+  {
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified('audience', 'adult', false, 'and')
+      ->filterByClassified('size', 'medium', false, 'and')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(1, count($disclosedAdultPics));
+    $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
+
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified('audience', 'adult', false, 'and')
+      ->filterByClassified('size', array('small', 'medium'), false, 'or')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(2, count($disclosedAdultPics));
+    $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
+    $this->assertEquals('Teddy', $disclosedAdultPics[1]->getName());
+
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified('audience', 'adult', false, 'and')
+      ->filterByClassified('size', array('small', 'medium'), false, 'and')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(0, count($disclosedAdultPics));
+  }
+
+  public function testFilterBySimpleArray()
+  {
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified(array('audience' =>  'adult'),  false,  'and')
+      ->filterByClassified(array('size' =>  'medium'),  false,  'and')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(1, count($disclosedAdultPics));
+    $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
+
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified(array('audience' =>  'adult'),  false,  'and')
+      ->filterByClassified(array('size', array('small' =>  'medium')),  false,  'or')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(2, count($disclosedAdultPics));
+    $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
+    $this->assertEquals('Teddy', $disclosedAdultPics[1]->getName());
+
+    $disclosedAdultPics = ClassifiedBehaviorTest1Query::create()
+      ->filterByClassified(array('audience' =>  'adult'),  false,  'and')
+      ->filterByClassified(array('size', array('small' =>  'medium')),  false,  'and')
+      ->orderByName()
+      ->find();
+
+    $this->assertEquals(0, count($disclosedAdultPics));
+  }
 }

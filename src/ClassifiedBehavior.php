@@ -11,6 +11,7 @@
 
 require_once __DIR__ . '/ClassifiedBehaviorObjectBuilderModifier.php';
 require_once __DIR__ . '/ClassifiedBehaviorQueryBuilderModifier.php';
+require_once __DIR__ . '/ClassifiedBehaviorPeerBuilderModifier.php';
 
 /**
  * define classifiedity level
@@ -18,7 +19,8 @@ require_once __DIR__ . '/ClassifiedBehaviorQueryBuilderModifier.php';
 class ClassifiedBehavior extends Behavior
 {
   protected $classificationTable, $objectBuilderModifier,
-            $classificationLinkTable, $queryBuilderModifier;
+            $classificationLinkTable, $queryBuilderModifier,
+            $peerBuilderModifier;
 
   protected $parameters = array(
     'classification_table' => 'classification',
@@ -244,5 +246,14 @@ class ClassifiedBehavior extends Behavior
 			$this->queryBuilderModifier = new ClassifiedBehaviorQueryBuilderModifier($this);
 		}
 		return $this->queryBuilderModifier;
+	}
+
+	public function getPeerBuilderModifier()
+	{
+		if (is_null($this->peerBuilderModifier))
+		{
+			$this->peerBuilderModifier = new ClassifiedBehaviorPeerBuilderModifier($this);
+		}
+		return $this->peerBuilderModifier;
 	}
 } // END OF ClassifiedBehavior

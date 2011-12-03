@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file declare the ClassifiedBehaviorObjectBuilderModifier class.
+ * This file declare the ClassifiedBehaviorPeerBuilderModifier class.
  *
  * @copyright (c) Carpe Hora SARL 2011
  * @since 2011-11-25
@@ -12,7 +12,7 @@
  * @author Julien Muetton <julien_muetton@carpe-hora.com>
  * @package propel.generator.behavior.classified
  */
-class ClassifiedBehaviorObjectBuilderModifier
+class ClassifiedBehaviorPeerBuilderModifier
 {
   protected $behavior, $table, $builder, $objectClassname, $peerClassname;
 
@@ -83,11 +83,33 @@ class ClassifiedBehaviorObjectBuilderModifier
     return $this->behavior->getSetterForClassificationColumnForParameter($parameter);
   }
 
-  public function objectMethods($builder)
+  public function staticMethods($builder)
   {
     $this->setbuilder($builder);
 
     return <<<EOF
+/**
+ * normalize scope name.
+ *
+ * @param String \$scope scope to normalize
+ * @return String
+ */
+public static function normalizeScopeName(\$scope)
+{
+  return \$scope;
+}
+
+/**
+ * normalize classification name.
+ *
+ * @param String \$classification classification to normalize
+ * @return String
+ */
+public static function normalizeClassificationName(\$classification)
+{
+  return \$classification;
+}
 EOF;
   }
 }
+
