@@ -225,24 +225,21 @@ protected function conditionForClassified(\$classifications, \$operator, \$cond_
   \$table_name = \$this->getModelAliasOrName() === '{$this->getActiveRecordClassname()}'
                     ? '{$this->behavior->getTable()->getCommonname()}'
                     : \$this->getModelAliasOrName();
-  \$query = {$this->getClassificationActiveQueryClassname()}::create(\$alias)
-    ->innerJoin{$this->getClassificationLinkActiveRecordClassname()}(\$alias . '_link')
-    ->use{$this->getClassificationLinkActiveQueryClassname()}(\$alias . '_link')
+  \$query = {$this->getClassificationLinkActiveQueryClassname()}::create(\$alias)
 EOF;
     foreach($this->behavior->getTable()->getPrimaryKey() as $key => $column) {
       $script .=<<<EOF
-        ->addUsingOperator(new Criterion(\$this, null, \$alias.'_link.{$this->behavior->getTable()->getCommonname()}_{$column->getName()} = ' . \$table_name . '.{$column->getName()}', Criteria::CUSTOM), null, null)
+        ->addUsingOperator(new Criterion(\$this, null, \$alias.'.{$this->behavior->getTable()->getCommonname()}_{$column->getName()} = ' . \$table_name . '.{$column->getName()}', Criteria::CUSTOM), null, null)
 EOF;
     }
     $script .= <<<EOF
-    ->endUse();
-
+  ;
   // now create conditions
   foreach(\$classifications as \$classification) {
 EOF;
       foreach($this->getClassificationTable()->getPrimaryKey() as $key => $column) {
         $script .=<<<EOF
-    \$conditions[] = \$alias . '_link.{$this->getClassificationTable()->getCommonname()}_{$column->getName()} = ' . (int) \$classification->get{$column->getPhpName()}();
+    \$conditions[] = \$alias . '.{$this->getClassificationTable()->getCommonname()}_{$column->getName()} = ' . (int) \$classification->get{$column->getPhpName()}();
 EOF;
     }
       $script .=<<<EOF
@@ -251,8 +248,8 @@ EOF;
   \$params = array();
   \$sql = BasePeer::createSelectSql(\$query, \$params);
   // replace SELECT statement to have * and alias
-  \$sql = preg_replace('#\\b{$this->getClassificationTable()->getCommonname()}\.#', \$alias.'.', \$sql);
-  \$sql_select = str_replace('SELECT  FROM {$this->getClassificationTable()->getCommonname()}', 'SELECT * FROM {$this->getClassificationTable()->getCommonname()} '.\$alias, \$sql);
+  //\$sql = preg_replace('#\\b{$this->getClassificationLinkTable()->getCommonname()}\.#', \$alias.'.', \$sql);
+  \$sql_select = str_replace('SELECT  FROM ', 'SELECT * FROM {$this->getClassificationLinkTable()->getCommonname()} '.\$alias, \$sql);
   \$condition = 'EXISTS (' .
                   \$sql_select . ' ' ."\n".
                   'AND ('.join(sprintf(' %s ', \$operator), \$conditions) . ')' ."\n".
