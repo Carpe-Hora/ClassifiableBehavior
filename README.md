@@ -33,7 +33,7 @@ $MyJsRepo->setName('my php repository');
 $MyJsRepo->classify('language', 'js');
 $MyJsRepo->classify('language', 'php'); // is now classified in js AND php
 $MyJsRepo->classify('license', 'GPL');
-$MyJsRepo->unclassify('language', 'js'); // now only classified in php
+$MyJsRepo->disclose('language', 'js'); // now only classified in php
 
 
 // ...and then retireve it
@@ -82,6 +82,8 @@ $myRepo->isClassified(array(
   'visibility' => 'public'
 ), 'AND', $excludeUnclassified = true);
 // return true
+
+$myRepo->disclose();
 ```
 
 To ease classifications management, behavior uses a unique classification table shared
@@ -104,7 +106,7 @@ Installation
 Under the hood
 --------------
 
-Behavior creates a cross reference table to access classification dictionnary
+Behavior creates a cross reference table to access classification dictionnary and filters using EXISTS statements.
 
 Advanced configuration
 ----------------------
@@ -116,10 +118,6 @@ Following parameters are available :
 * ```scope_column```: scope column to use.
 * ```auto_create_classification```: if no classification found for parameters, should it be created ?
 * ```scope_default```: comma separated default scope list.
-* ```mode``` : how to behave on search ?
-  * **paranoid**: object object MUST match on EVERY scope. classification REQUIRED for every searched scopes
-  * **normal**: object MUST match on EVERY scope. no classification for scope match as TRUE
-  * **disclose**: object MUST match on ANY scope. no classification for scope match as TRUE
 * ```scope_matching```: how to match on scope ?
   * **strict**: namespace has to be strictly equal
   * **nested**: namespace has to start the same. separator is defined as ```nesting_separator```
@@ -138,4 +136,6 @@ A scope can either be a foreign key to an object.
 TODO
 ----
 
+* AR disclose method
+* nesting namespaces
 * Index classification table fields

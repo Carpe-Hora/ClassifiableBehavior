@@ -133,15 +133,31 @@ public static function prepareClassifications(\$namespace, \$classifications = n
 
   foreach (\$classifications as \$key => \$classification) {
     \$ns = is_null(\$namespace) ? \$key : \$namespace;
-    if (!isset(\$ret[\$ns])) {
-      \$ret[\$ns] = array();
-    }
     if (\$classification instanceof {$this->getClassificationActiveRecordClassname()})
     {
-      \$ret[\$classification->{$this->getGetterForClassificationColumnForParameter('scope_column')}()][] = \$classification;
+      \$scope = \$classification->{$this->getGetterForClassificationColumnForParameter('scope_column')}();
+      \$key = \$classification->{$this->getGetterForClassificationColumnForParameter('classification_column')}();
+      if (isset(\$ret[\$scope])) {
+        \$ret[\$scope][\$key] = \$classification;
+      }
+      else {
+        \$ret[\$scope] = array(\$key => \$classification);
+      }
     }
     elseif(is_array(\$classification) || (\$classification instanceof PropelCollection)) {
-      \$ret = array_merge(\$ret, {$this->peerClassname}::prepareClassifications(\$ns, \$classification));
+      \$classes = {$this->peerClassname}::prepareClassifications(\$ns, \$classification);
+      foreach (\$classes as \$class) {
+        foreach (\$class as \$c) {
+          \$key = \$c->{$this->getGetterForClassificationColumnForParameter('classification_column')}();
+          \$scope = \$c->{$this->getGetterForClassificationColumnForParameter('scope_column')}();
+          if (isset(\$ret[\$scope])) {
+            \$ret[\$scope][\$key] = \$c;
+          }
+          else {
+            \$ret[\$scope] = array(\$key => \$c);
+          }
+        }
+      }
     }
     else {
       // well retrieve it.
@@ -154,7 +170,14 @@ public static function prepareClassifications(\$namespace, \$classifications = n
         throw new Exception(sprintf('Unknown category %s/%s', \$ns, \$classification));
       }
 
-      \$ret[\$ns][] = \$c;
+      \$key = \$c->{$this->getGetterForClassificationColumnForParameter('classification_column')}();
+      \$scope = \$c->{$this->getGetterForClassificationColumnForParameter('scope_column')}();
+      if (isset(\$ret[\$scope])) {
+        \$ret[\$scope][\$key] = \$c;
+      }
+      else {
+        \$ret[\$scope] = array(\$key => \$c);
+      }
     }
   }
 

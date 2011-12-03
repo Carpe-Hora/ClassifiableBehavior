@@ -85,9 +85,10 @@ EOF;
 
   public function testActiveRecordMethodsExtists()
   {
-  $this->markTestSkipped();
     $this->assertTrue(method_exists('ClassifiedBehaviorTest1', 'classify'));
-    $this->assertTrue(method_exists('ClassifiedBehaviorTest1', 'getClassifications'));
+    $this->assertTrue(method_exists('ClassifiedBehaviorTest1', 'isClassified'));
+    $this->assertTrue(method_exists('ClassifiedBehaviorTest1', 'disclose'));
+    $this->assertTrue(method_exists('ClassifiedBehaviorTest1', 'getClassification'));
   }
 
   public function testClassificationParanoidQuery()
@@ -204,21 +205,23 @@ EOF;
     $this->assertEquals(2, count($res));
     $this->assertTrue(isset($res['audience']));
     $this->assertTrue(isset($res['size']));
-    $this->assertEquals('audience', $res['audience'][0]->getScope());
-    $this->assertEquals('adult', $res['audience'][0]->getClassification());
-    $this->assertEquals('audience', $res['audience'][1]->getScope());
-    $this->assertEquals('kid', $res['audience'][1]->getClassification());
-    $this->assertEquals('size', $res['size'][0]->getScope());
-    $this->assertEquals('small', $res['size'][0]->getClassification());
+    $this->assertEquals('audience', $res['audience']['adult']->getScope());
+    $this->assertEquals('adult', $res['audience']['adult']->getClassification());
+    $this->assertEquals('audience', $res['audience']['kid']->getScope());
+    $this->assertEquals('kid', $res['audience']['kid']->getClassification());
+    $this->assertEquals('size', $res['size']['small']->getScope());
+    $this->assertEquals('small', $res['size']['small']->getClassification());
     // $q->prepareClassifications('audience', array('adult', 'kid'));
     $res = ClassifiedBehaviorTest1Peer::prepareClassifications('audience', array('adult', 'kid'));
-    $this->assertSame(array('audience' => array($class['audience']['adult'], $class['audience']['kid'])), $res);
+    $this->assertSame(array('audience' => array(
+                                'adult' => $class['audience']['adult'],
+                                'kid' => $class['audience']['kid'])), $res);
     // $q->prepareClassifications('audience', 'kid');
     $res = ClassifiedBehaviorTest1Peer::prepareClassifications('audience', 'kid');
-    $this->assertSame(array('audience' => array($class['audience']['kid'])), $res);
+    $this->assertSame(array('audience' => array('kid' => $class['audience']['kid'])), $res);
     // $q->prepareClassifications('size', array('small', 'medium'));
     $res = ClassifiedBehaviorTest1Peer::prepareClassifications('size', array('small', 'medium'));
-    $this->assertSame(array('size' => array($class['size']['small'], $class['size']['medium'])), $res);
+    $this->assertSame(array('size' => array('small' => $class['size']['small'], 'medium' => $class['size']['medium'])), $res);
   }
 
   public function testFilterByClassificationNames()
@@ -296,5 +299,52 @@ EOF;
       ->find();
 
     $this->assertEquals(2, count($adultOrSmallPics));
+  }
+
+  public function testActiveRecoordClassification()
+  {
+    $pic = new ClassifiedBehaviorTest1();
+    $this->assertTrue($pic->isDisclosed());
+    $this->assertEquals(array(), $pic->getClassification());
+
+    $pic->classify(array(
+        'audience'  => array('adult', 'kid'),
+        'size'      => 'big'));
+    $this->assertEquals(2, count($pic->getClassification()));
+    $this->assertTrue($pic->isDisclosed('license'));
+    $this->assertFalse($pic->isDisclosed('size'));
+    $this->assertFalse($pic->isDisclosed('audience'));
+
+    $this->assertTrue($pic->isClassified('size', 'big'));
+    $this->assertTrue($pic->isClassified('audience', 'adult'));
+    $this->assertTrue($pic->isClassified('audience', 'kid'));
+    $this->assertFalse($pic->isClassified('size', 'small'));
+    $this->assertTrue($pic->isClassified(array(
+                      'audience'  => array('kid', 'adult'),
+                      'size'      => array('big', 'small')), 'or'));
+    $this->assertFalse($pic->isClassified(array(
+                      'audience'  => array('kid', 'adult'),
+                      'size'      => array('big', 'small')), 'and'));
+    $this->assertFalse($pic->isClassified(array(
+                      'audience'  => array('kid', 'adult'),
+                      'size'      => array('big', 'small')), 'xor'));
+    $this->assertTrue($pic->isClassified(array(
+                      'audience'  => array('kid'),
+                      'size'      => array('big', 'small')), 'xor'));
+    $this->assertTrue($pic->isClassified(array(
+                      'audience'  => array('kid', 'adult'),
+                      'size'      => 'big'), 'and'));
+    $this->assertFalse($pic->isClassified(array(
+                      'license' => 'MIT'), 'and', true));
+    $this->assertTrue($pic->isClassified(array(
+                      'license' => 'MIT'), 'and', false));
+
+    // check overrides
+    $pic->classify(array(
+        'size'      => 'small',
+        'license'   => 'MIT'));
+    $this->assertTrue($pic->isClassified('size', 'small'));
+    $this->assertTrue($pic->isClassified('size', 'big'));
+    $this->assertTrue($pic->isClassified('license', 'MIT'));
   }
 }

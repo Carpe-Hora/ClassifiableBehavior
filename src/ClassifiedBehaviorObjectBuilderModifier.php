@@ -83,11 +83,151 @@ class ClassifiedBehaviorObjectBuilderModifier
     return $this->behavior->getSetterForClassificationColumnForParameter($parameter);
   }
 
+  protected function getGetterForClassificationColletion()
+  {
+    return sprintf('get%ss', $this->getClassificationActiveRecordClassname());
+  }
+
+  protected function getSetterForClassificationColletion()
+  {
+    return sprintf('set%ss', $this->getClassificationActiveRecordClassname());
+  }
+
+  protected function getAddClassificationMethod()
+  {
+    return sprintf('add%s', $this->getClassificationActiveRecordClassname());
+  }
+
   public function objectMethods($builder)
   {
     $this->setbuilder($builder);
 
     return <<<EOF
+/**
+ * classify an object.
+ *
+ * \$object->classify('foo', 'bar');
+ * \$object->classify(array(
+ *      'foo' => array('bar', 'foo_bar')
+ *    ));
+ * \$object->classify(array(
+ *      'foo' => array('bar', 'foo_bar'),
+ *      'baz' => 'caz'
+ *    ));
+ *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
+ * @return {\$this->objectClassname}
+ */
+public function classify(\$namespace, \$classification = null)
+{
+  \$classifications = \$this->prepareClassifications(\$namespace, \$classification);
+  \$mine = \$this->prepareClassifications(\$this->getClassifications());
+  foreach (\$classifications as \$ns => \$classes) {
+    \$diff = isset(\$mine[\$ns]) ?  array_diff(\$classes, \$mine[\$ns]) : \$classes;
+    \$new = array_intersect(\$classes, \$diff);
+    foreach (\$new as \$classification) {
+      \$this->{$this->getAddClassificationMethod()}(\$classification);
+    }
+  }
+  return \$this;
+}
+
+/**
+ * retrieve and order the {$this->objectClassname} {$this->getClassificationTable()->getPhpName()} records
+ */
+public function getClassification(\$namespace = null)
+{
+  \$classifications = \$this->prepareClassifications(\$this->getClassifications());
+
+  if (is_null(\$namespace)) {
+    return \$classifications;
+  }
+  if (isset(\$classifications[\$namespace])) {
+    return \$classifications[\$namespace];
+  }
+  // @todo add default classification
+  return \$default = array();
+}
+
+/**
+ * Check wether the object match given classification.
+ *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
+ * @param String  \$operator         operator to use for search combination ('OR', AND', 'XOR').
+ * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
+ * @return array
+ */
+public function isClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
+{
+  if (!is_null(\$classifications) &&
+      (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {
+    \$paranoid = \$operator;
+    \$operator = \$classifications;
+    \$classifications = null;
+  }
+
+  \$classifications = \$this->prepareClassifications(\$namespace, \$classifications);
+  \$mine = \$this->getClassification();
+  foreach (\$classifications as \$ns => \$classes) {
+    if(!isset(\$mine[\$ns])) {
+      if (\$paranoid) {
+        return false;
+      }
+      continue;
+    }
+
+    switch (strtolower(trim(\$operator)))
+    {
+      case 'and':
+        if (count(\$mine[\$ns]) < count(\$classes) || // objects has not enough permission
+            count(\$classes) !== count(array_intersect(\$mine[\$ns], \$classes)) // or common values are not as many as expected
+        ) {
+          return false;
+        }
+        break;
+      case 'or':
+        if (!count(array_intersect(\$mine[\$ns], \$classes)) ) {
+          return false;
+        }
+        break;
+      case 'xor':
+        if (count(array_intersect(\$mine[\$ns], \$classes)) > 1) {
+          return false;
+        }
+        break;
+      default:
+        throw new PropelExeption('unknown operator : ' . \$operator);
+    }
+  }
+  return true;
+}
+
+/**
+ * Retrun true if no classification found in \$namespace.
+ *
+ * @param String  \$namespace        classification \$namespace.
+ */
+public function isDisclosed(\$namespace = null)
+{
+  return 0 === count(\$this->getClassification(\$namespace));
+}
+
+/**
+ * retrieve the classification list.
+ * prepareClassifications(array('ns' => array('class1', 'class2', 'class3')))
+ * prepareClassifications('ns', array('class1', 'class2', 'class3'))
+ * prepareClassifications('ns', 'class1')
+ *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
+ * @return array
+ */
+protected function prepareClassifications(\$namespace, \$classifications = null)
+{
+  return {$this->peerClassname}::prepareClassifications(\$namespace, \$classifications);
+}
 EOF;
   }
 }
