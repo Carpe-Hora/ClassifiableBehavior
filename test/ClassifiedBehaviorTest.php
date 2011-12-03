@@ -181,14 +181,6 @@ EOF;
     $this->assertEquals(0, count($disclosedAdultPics));
   }
 
-  protected function prepareProtectedMethod($class, $method)
-  {
-    $class = new ReflectionClass($class);
-    $method = $class->getMethod($method);
-    $method->setAccessible(true);
-    return $method;
-  }
-
   public function testNormalizeValues()
   {
     $this->assertEquals('foo', ClassifiedBehaviorTest1Peer::normalizeScopeName('foo'));
@@ -207,11 +199,8 @@ EOF;
           'big' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('big')->findOne(),),
     );
 
-    $q = ClassifiedBehaviorTest1Query::create();
-    $prepareClassifiactionsMethod = $this->prepareProtectedMethod('ClassifiedBehaviorTest1Query', 'prepareClassifications');
-
     // $q->prepareClassifications(array('audience' => array('adult', 'kid'), 'size' => array('small')));
-    $res = $prepareClassifiactionsMethod->invokeArgs($q, array(array('audience' => array('adult', 'kid'), 'size' => array('small'))));
+    $res = ClassifiedBehaviorTest1Peer::prepareClassifications(array('audience' => array('adult', 'kid'), 'size' => array('small')));
     $this->assertEquals(2, count($res));
     $this->assertTrue(isset($res['audience']));
     $this->assertTrue(isset($res['size']));
@@ -222,13 +211,13 @@ EOF;
     $this->assertEquals('size', $res['size'][0]->getScope());
     $this->assertEquals('small', $res['size'][0]->getClassification());
     // $q->prepareClassifications('audience', array('adult', 'kid'));
-    $res = $prepareClassifiactionsMethod->invokeArgs($q, array('audience', array('adult', 'kid')));
+    $res = ClassifiedBehaviorTest1Peer::prepareClassifications('audience', array('adult', 'kid'));
     $this->assertSame(array('audience' => array($class['audience']['adult'], $class['audience']['kid'])), $res);
     // $q->prepareClassifications('audience', 'kid');
-    $res = $prepareClassifiactionsMethod->invokeArgs($q, array('audience', 'kid'));
+    $res = ClassifiedBehaviorTest1Peer::prepareClassifications('audience', 'kid');
     $this->assertSame(array('audience' => array($class['audience']['kid'])), $res);
     // $q->prepareClassifications('size', array('small', 'medium'));
-    $res = $prepareClassifiactionsMethod->invokeArgs($q, array('size', array('small', 'medium'),));
+    $res = ClassifiedBehaviorTest1Peer::prepareClassifications('size', array('small', 'medium'));
     $this->assertSame(array('size' => array($class['size']['small'], $class['size']['medium'])), $res);
   }
 

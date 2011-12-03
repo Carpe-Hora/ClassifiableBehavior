@@ -87,7 +87,7 @@ class ClassifiedBehaviorPeerBuilderModifier
   {
     $this->setbuilder($builder);
 
-    return <<<EOF
+    $string = <<<EOF
 /**
  * normalize scope name.
  *
@@ -109,7 +109,58 @@ public static function normalizeClassificationName(\$classification)
 {
   return \$classification;
 }
+
+/**
+ * retrieve the classification list.
+ * {$this->peerClassname}::prepareClassifications(array('ns' => array('class1', 'class2', 'class3')))
+ * {$this->peerClassname}::prepareClassifications('ns', array('class1', 'class2', 'class3'))
+ * {$this->peerClassname}::prepareClassifications('ns', 'class1')
+ *
+ * @return array
+ */
+public static function prepareClassifications(\$namespace, \$classifications = null)
+{
+  \$ret = array();
+  if (is_null(\$classifications)) {
+    \$classifications = \$namespace;
+    \$namespace = null;
+  }
+  if(!is_array(\$classifications) && !(\$classifications instanceof PropelCollection)) {
+    \$classifications = array(\$classifications);
+  }
+
+  foreach (\$classifications as \$key => \$classification) {
+    \$ns = is_null(\$namespace) ? \$key : \$namespace;
+    if (!isset(\$ret[\$ns])) {
+      \$ret[\$ns] = array();
+    }
+    if (\$classification instanceof {$this->getClassificationActiveRecordClassname()})
+    {
+      \$ret[\$ns][] = \$classification;
+    }
+    elseif(is_array(\$classification) || (\$classification instanceof PropelCollection)) {
+      \$ret = array_merge(\$ret, {$this->peerClassname}::prepareClassifications(\$ns, \$classification));
+    }
+    else {
+      // well retrieve it.
+      // @todo optimize the retrieval...
+      \$c = {$this->getClassificationActiveQueryClassname()}::create()
+        ->{$this->getFilterByClassificationColumnForParameter('scope_column')}({$this->peerClassname}::normalizeScopeName(\$ns))
+        ->{$this->getFilterByClassificationColumnForParameter('classification_column')}({$this->peerClassname}::normalizeClassificationName(\$classification))
+        ->findOne();
+      if (!\$c) {
+        throw new Exception(sprintf('Unknown category %s/%s', \$ns, \$classification));
+      }
+
+      \$ret[\$ns][] = \$c;
+    }
+  }
+
+  return \$ret;
+}
 EOF;
+var_dump($string);
+    return $string;
   }
 }
 
