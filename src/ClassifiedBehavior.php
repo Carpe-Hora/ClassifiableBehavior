@@ -87,7 +87,8 @@ class ClassifiedBehavior extends Behavior
       $classificationTable->addColumn(array(
           'name' => $this->getParameter('classification_column'),
           'type' => 'VARCHAR',
-          'size' => '50'
+          'size' => '50',
+          'primaryString' => 'true'
       ));
       $classificationTable->addColumn(array(
           'name' => $this->getParameter('scope_column'),
