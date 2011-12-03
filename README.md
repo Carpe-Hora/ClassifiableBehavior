@@ -31,7 +31,9 @@ $MyPhpRepo->classify('license', 'MIT');
 $MyJsRepo = new Repository();
 $MyJsRepo->setName('my php repository');
 $MyJsRepo->classify('language', 'js');
+$MyJsRepo->classify('language', 'php'); // is now classified in js AND php
 $MyJsRepo->classify('license', 'GPL');
+$MyJsRepo->unclassify('language', 'js'); // now only classified in php
 
 
 // ...and then retireve it
@@ -47,7 +49,42 @@ RepositoryQuery::create()
 
 Previous example will return a PropelCollection with ```$MyPhpRepo``` in it.
 
-To easily manage classifications, behavior uses a unique classification table shared
+OR searchs are easily done by giving an array and the operator to use for subqueries :
+
+``` php
+<?php
+RepositoryQuery::create()
+  // filter by OR queries
+  ->filterByClassified(array(
+          'license' => array('MIT', 'BSD'), // licensed under MIT AND BSD as defined $operator argument
+          'visibility' => 'public',         // or with public visibility
+        ), $operator = 'AND', $paranoid = true)
+```
+
+To retrieve classifications an object is attached to, just call the ```getClassification`̀`` method :
+
+``` php
+<?php
+$myRepo->classify(array(
+  'license' => array('MIT', 'BSD'),
+  'visibility' => 'public'
+), 'AND', $excludeUnclassified = true);
+// return $myRepo
+
+$myRepo->getClassification();
+// array(
+//  'license' => array('MIT', 'BSD'),
+//  'visibility' => 'public'
+// )
+
+$myRepo->isClassified(array(
+  'license' => array('MIT', 'BSD'),
+  'visibility' => 'public'
+), 'AND', $excludeUnclassified = true);
+// return true
+```
+
+To ease classifications management, behavior uses a unique classification table shared
 for all classified content. To use separate tables, just override the
 ```classification_table``` parameter.
 

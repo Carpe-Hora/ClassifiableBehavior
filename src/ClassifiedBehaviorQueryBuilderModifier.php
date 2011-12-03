@@ -312,6 +312,8 @@ EOF;
  * prepareClassifications('ns', array('class1', 'class2', 'class3'))
  * prepareClassifications('ns', 'class1')
  *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
  * @return array
  */
 protected function prepareClassifications(\$namespace, \$classifications = null)

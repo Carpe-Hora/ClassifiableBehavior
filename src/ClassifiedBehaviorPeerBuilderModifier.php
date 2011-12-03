@@ -116,6 +116,8 @@ public static function normalizeClassificationName(\$classification)
  * {$this->peerClassname}::prepareClassifications('ns', array('class1', 'class2', 'class3'))
  * {$this->peerClassname}::prepareClassifications('ns', 'class1')
  *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
  * @return array
  */
 public static function prepareClassifications(\$namespace, \$classifications = null)
@@ -136,7 +138,7 @@ public static function prepareClassifications(\$namespace, \$classifications = n
     }
     if (\$classification instanceof {$this->getClassificationActiveRecordClassname()})
     {
-      \$ret[\$ns][] = \$classification;
+      \$ret[\$classification->{$this->getGetterForClassificationColumnForParameter('scope_column')}()][] = \$classification;
     }
     elseif(is_array(\$classification) || (\$classification instanceof PropelCollection)) {
       \$ret = array_merge(\$ret, {$this->peerClassname}::prepareClassifications(\$ns, \$classification));
@@ -159,7 +161,6 @@ public static function prepareClassifications(\$namespace, \$classifications = n
   return \$ret;
 }
 EOF;
-var_dump($string);
     return $string;
   }
 }
