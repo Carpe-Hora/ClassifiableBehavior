@@ -4,7 +4,7 @@ ClassifiedBehavior
 Quick start
 -----------
 
-Simply declare the behavior for the classified objects to allow filtering by classifications.
+Simply declare the behavior for the classified objects to allow filtering by classifications:
 
 ``` xml
 <database name="propel">
@@ -16,7 +16,7 @@ Simply declare the behavior for the classified objects to allow filtering by cla
 </database>
 ```
 
-then just add classificationements to your object
+then just add classificationements to your object:
 
 ``` php
 <?php
@@ -36,7 +36,7 @@ $MyJsRepo->classify('license', 'GPL');
 $MyJsRepo->disclose('language', 'js'); // now only classified in php
 
 
-// ...and then retireve it
+// ...and then retrieve it
 RepositoryQuery::create()
   // filter for 'php' AND 'js' language, paranoid
   ->filterByClassified('language', array('php', 'js'), 'and', $paranoid = true)
@@ -47,9 +47,9 @@ RepositoryQuery::create()
   ->filterByClassified('visibility', 'public', null, $paranoid = false);
 ```
 
-Previous example will return a PropelCollection with ```$MyPhpRepo``` in it.
+Previous example will return a `PropelCollection` with ```$MyPhpRepo``` in it.
 
-OR searchs are easily done by giving an array and the operator to use for subqueries :
+`OR` searches are easily done by giving an array and the operator to use for subqueries:
 
 ``` php
 <?php
@@ -61,7 +61,7 @@ RepositoryQuery::create()
         ), $operator = 'AND', $paranoid = true)
 ```
 
-To retrieve classifications an object is attached to, just call the ```getClassification`̀`` method :
+To retrieve classifications an object is attached to, just call the ```getClassification``` method:
 
 ``` php
 <?php
@@ -93,7 +93,7 @@ for all classified content. To use separate tables, just override the
 Usage
 -----
 
-You can use ClassifiedBehavior :
+You can use ClassifiedBehavior:
 
 * limit access to classified content
 * to organize collections and ease filtering
