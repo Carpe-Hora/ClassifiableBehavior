@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file declare the ClassifiedBehaviorObjectBuilderModifier class.
+ * This file declare the ClassifiableBehaviorObjectBuilderModifier class.
  *
  * @copyright (c) Carpe Hora SARL 2011
  * @since 2011-11-25
@@ -10,9 +10,9 @@
 
 /**
  * @author Julien Muetton <julien_muetton@carpe-hora.com>
- * @package propel.generator.behavior.classified
+ * @package propel.generator.behavior.classifiable
  */
-class ClassifiedBehaviorObjectBuilderModifier
+class ClassifiableBehaviorObjectBuilderModifier
 {
   protected $behavior, $table, $builder, $objectClassname, $peerClassname;
 
@@ -159,7 +159,7 @@ public function getClassification(\$namespace = null)
  * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
  * @return array
  */
-public function isClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
+public function isClassifiable(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
 {
   if (!is_null(\$classifications) &&
       (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {

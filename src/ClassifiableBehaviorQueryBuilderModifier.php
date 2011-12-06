@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file declare the ClassifiedBehaviorQueryBuilderModifier class.
+ * This file declare the ClassifiableBehaviorQueryBuilderModifier class.
  *
  * @copyright (c) Carpe Hora SARL 2011
  * @since 2011-11-25
@@ -10,9 +10,9 @@
 
 /**
  * @author Julien Muetton <julien_muetton@carpe-hora.com>
- * @package propel.generator.behavior.classified
+ * @package propel.generator.behavior.classifiable
  */
-class ClassifiedBehaviorQueryBuilderModifier
+class ClassifiableBehaviorQueryBuilderModifier
 {
   protected $behavior, $table, $builder, $objectClassname, $peerClassname;
 
@@ -69,8 +69,8 @@ public function __construct($behavior)
 
   public function getClassificationActiveRecordClassname()
   {
-    $classifiedTable = $this->getClassificationTable();
-    return $this->builder->getNewStubObjectBuilder($classifiedTable)->getClassname();
+    $classifiableTable = $this->getClassificationTable();
+    return $this->builder->getNewStubObjectBuilder($classifiableTable)->getClassname();
   }
 
   public function getClassificationLinkActiveRecordClassname()
@@ -144,16 +144,16 @@ EOF;
  * if several namespaces are provided, then assume this is ANY of the matches.
  *
  * // find *big* AND *blue* objects
- * ->filterByClassified('size', 'big');
- * ->filterByClassified('color', 'blue');
+ * ->filterByClassifiable('size', 'big');
+ * ->filterByClassifiable('color', 'blue');
  *
  * // find *big* OR *blue* objects
- * ->filterByClassified(array(
+ * ->filterByClassifiable(array(
  *        'size' => 'big',
  *        'color' => 'blue',));
  *
  * // filter *big* OR *small*
- * ->filterByClassified('size', array('big', 'small') 'OR', \$exclude_disclosed = true)
+ * ->filterByClassifiable('size', array('big', 'small') 'OR', \$exclude_disclosed = true)
  *
  * @param String  \$namespace        classification \$namespace.
  * @param String  \$classification   classification name if namespace is provided.
@@ -161,9 +161,9 @@ EOF;
  * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
  * @return {$this->getActiveQueryClassname()}
  */
-public function filterByClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
+public function filterByClassifiable(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
 {
-  \$uid = 'classified_'.uniqid();
+  \$uid = 'classifiable_'.uniqid();
   \$conditions = array();
   if (!is_null(\$classifications) &&
       (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {
@@ -182,7 +182,7 @@ public function filterByClassified(\$namespace, \$classifications = null, \$oper
     // paranoid
     \$conditions[] = \$cond;
     \$this
-        ->conditionForClassified(\$classes, \$operator, \$cond);
+        ->conditionForClassifiable(\$classes, \$operator, \$cond);
   }
   return \$this->where(\$conditions, 'OR');
 }
@@ -244,12 +244,12 @@ EOF;
 }
 
 /**
- * create condition for classified content filtering.
+ * create condition for classifiable content filtering.
  *
  * @param {$this->getClassificationActiveRecordClassname()} \$classifications classification object, collection or array to filter against
  * @return {$this->getActiveQueryClassname()}
  */
-protected function conditionForClassified(\$classifications, \$operator, \$cond_name)
+protected function conditionForClassifiable(\$classifications, \$operator, \$cond_name)
 {
   \$conditions = array();
   if(is_array(\$classifications) || \$classifications instanceof PropelCollection) {
@@ -258,10 +258,10 @@ protected function conditionForClassified(\$classifications, \$operator, \$cond_
     }
     if (count(\$classifications) > 1) {
       \$count  = 0;
-      \$cond = 'classified_'.uniqid();
+      \$cond = 'classifiable_'.uniqid();
       foreach (\$classifications as \$classification) {
         \$conditions[] = \$cond . '_' . (++\$count);
-        \$this->conditionForClassified(\$classification, \$operator, \$cond . '_' . \$count);
+        \$this->conditionForClassifiable(\$classification, \$operator, \$cond . '_' . \$count);
       }
       return \$this->combine(\$conditions, \$operator, \$cond_name);
     }

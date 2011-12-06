@@ -1,21 +1,21 @@
 <?php
 /**
- * This file declare the ClassifiedBehavior class.
+ * This file declare the ClassifiableBehavior class.
  *
- * @package propel.generator.behavior.classified
+ * @package propel.generator.behavior.classifiable
  * @author Julien Muetton <julien_muetton@carpe-hora.com>
  * @copyright (c) Carpe Hora SARL 2011
  * @since 2011-11-30
  */
 
-require_once __DIR__ . '/ClassifiedBehaviorObjectBuilderModifier.php';
-require_once __DIR__ . '/ClassifiedBehaviorQueryBuilderModifier.php';
-require_once __DIR__ . '/ClassifiedBehaviorPeerBuilderModifier.php';
+require_once __DIR__ . '/ClassifiableBehaviorObjectBuilderModifier.php';
+require_once __DIR__ . '/ClassifiableBehaviorQueryBuilderModifier.php';
+require_once __DIR__ . '/ClassifiableBehaviorPeerBuilderModifier.php';
 
 /**
- * define classifiedity level
+ * define classifiableity level
  */
-class ClassifiedBehavior extends Behavior
+class ClassifiableBehavior extends Behavior
 {
   protected $classificationTable, $objectBuilderModifier,
             $classificationLinkTable, $queryBuilderModifier,
@@ -148,7 +148,7 @@ class ClassifiedBehavior extends Behavior
 			}
 			$classificationLinkTable->addForeignKey($fk);
 
-			// create the foreign key to classified content
+			// create the foreign key to classifiable content
 			$fk = new ForeignKey();
 			$fk->setForeignTableCommonName($this->classificationTable->getCommonName());
 			$fk->setForeignSchemaName($this->classificationTable->getSchema());
@@ -234,7 +234,7 @@ class ClassifiedBehavior extends Behavior
 	{
 		if (is_null($this->objectBuilderModifier))
 		{
-			$this->objectBuilderModifier = new ClassifiedBehaviorObjectBuilderModifier($this);
+			$this->objectBuilderModifier = new ClassifiableBehaviorObjectBuilderModifier($this);
 		}
 		return $this->objectBuilderModifier;
 	}
@@ -243,7 +243,7 @@ class ClassifiedBehavior extends Behavior
 	{
 		if (is_null($this->queryBuilderModifier))
 		{
-			$this->queryBuilderModifier = new ClassifiedBehaviorQueryBuilderModifier($this);
+			$this->queryBuilderModifier = new ClassifiableBehaviorQueryBuilderModifier($this);
 		}
 		return $this->queryBuilderModifier;
 	}
@@ -252,8 +252,8 @@ class ClassifiedBehavior extends Behavior
 	{
 		if (is_null($this->peerBuilderModifier))
 		{
-			$this->peerBuilderModifier = new ClassifiedBehaviorPeerBuilderModifier($this);
+			$this->peerBuilderModifier = new ClassifiableBehaviorPeerBuilderModifier($this);
 		}
 		return $this->peerBuilderModifier;
 	}
-} // END OF ClassifiedBehavior
+} // END OF ClassifiableBehavior

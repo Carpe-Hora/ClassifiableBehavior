@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file declare the ClassifiedBehaviorPeerBuilderModifier class.
+ * This file declare the ClassifiableBehaviorPeerBuilderModifier class.
  *
  * @copyright (c) Carpe Hora SARL 2011
  * @since 2011-11-25
@@ -10,9 +10,9 @@
 
 /**
  * @author Julien Muetton <julien_muetton@carpe-hora.com>
- * @package propel.generator.behavior.classified
+ * @package propel.generator.behavior.classifiable
  */
-class ClassifiedBehaviorPeerBuilderModifier
+class ClassifiableBehaviorPeerBuilderModifier
 {
   protected $behavior, $table, $builder, $objectClassname, $peerClassname;
 
