@@ -8,7 +8,7 @@ Simply declare the behavior for the classifiable objects to allow filtering by c
 
 ``` xml
 <database name="propel">
-  <table name="picture">
+  <table name="repository">
     <column name="id" type="INTEGER" required="true" primaryKey="true" autoIncrement="true" />
     <column name="name" type="VARCHAR" size="255" />
     <behavior name="classifiable" />
