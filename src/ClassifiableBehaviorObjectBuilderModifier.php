@@ -159,7 +159,7 @@ public function getClassification(\$namespace = null)
  * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
  * @return array
  */
-public function isClassifiable(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
+public function isClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
 {
   if (!is_null(\$classifications) &&
       (is_array(\$namespace) || (\$namespace instanceof PropelCollection))) {

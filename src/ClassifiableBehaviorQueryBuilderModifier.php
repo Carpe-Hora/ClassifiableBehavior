@@ -144,16 +144,16 @@ EOF;
  * if several namespaces are provided, then assume this is ANY of the matches.
  *
  * // find *big* AND *blue* objects
- * ->filterByClassifiable('size', 'big');
- * ->filterByClassifiable('color', 'blue');
+ * ->filterByClassified('size', 'big');
+ * ->filterByClassified('color', 'blue');
  *
  * // find *big* OR *blue* objects
- * ->filterByClassifiable(array(
+ * ->filterByClassified(array(
  *        'size' => 'big',
  *        'color' => 'blue',));
  *
  * // filter *big* OR *small*
- * ->filterByClassifiable('size', array('big', 'small') 'OR', \$exclude_disclosed = true)
+ * ->filterByClassified('size', array('big', 'small') 'OR', \$exclude_disclosed = true)
  *
  * @param String  \$namespace        classification \$namespace.
  * @param String  \$classification   classification name if namespace is provided.
@@ -161,7 +161,7 @@ EOF;
  * @param Boolean \$paranoid         should the object be rejected if no matching at all for namespace. (exclude disclosed)
  * @return {$this->getActiveQueryClassname()}
  */
-public function filterByClassifiable(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
+public function filterByClassified(\$namespace, \$classifications = null, \$operator = 'and', \$paranoid = true)
 {
   \$uid = 'classifiable_'.uniqid();
   \$conditions = array();

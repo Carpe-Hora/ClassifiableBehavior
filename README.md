@@ -1,17 +1,17 @@
-ClassifiedBehavior
+ClassifiableBehavior
 ==================
 
 Quick start
 -----------
 
-Simply declare the behavior for the classified objects to allow filtering by classifications:
+Simply declare the behavior for the classifiable objects to allow filtering by classifications:
 
 ``` xml
 <database name="propel">
   <table name="picture">
     <column name="id" type="INTEGER" required="true" primaryKey="true" autoIncrement="true" />
     <column name="name" type="VARCHAR" size="255" />
-    <behavior name="classified" />
+    <behavior name="classifiable" />
   </table>
 </database>
 ```
@@ -93,7 +93,7 @@ for all classified content. To use separate tables, just override the
 Usage
 -----
 
-You can use ClassifiedBehavior:
+You can use ClassifiableBehavior:
 
 * limit access to classified content
 * to organize collections and ease filtering
