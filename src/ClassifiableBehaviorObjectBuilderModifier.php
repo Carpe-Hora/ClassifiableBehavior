@@ -83,12 +83,12 @@ class ClassifiableBehaviorObjectBuilderModifier
     return $this->behavior->getSetterForClassificationColumnForParameter($parameter);
   }
 
-  protected function getGetterForClassificationColletion()
+  protected function getGetterForClassificationCollection()
   {
     return sprintf('get%ss', $this->getClassificationActiveRecordClassname());
   }
 
-  protected function getSetterForClassificationColletion()
+  protected function getSetterForClassificationCollection()
   {
     return sprintf('set%ss', $this->getClassificationActiveRecordClassname());
   }
@@ -122,7 +122,7 @@ class ClassifiableBehaviorObjectBuilderModifier
 public function classify(\$namespace, \$classification = null)
 {
   \$classifications = \$this->prepareClassifications(\$namespace, \$classification);
-  \$mine = \$this->prepareClassifications(\$this->getClassifications());
+  \$mine = \$this->prepareClassifications(\$this->{$this->getGetterForClassificationCollection()}());
   foreach (\$classifications as \$ns => \$classes) {
     \$diff = isset(\$mine[\$ns]) ?  array_diff(\$classes, \$mine[\$ns]) : \$classes;
     \$new = array_intersect(\$classes, \$diff);
@@ -138,7 +138,7 @@ public function classify(\$namespace, \$classification = null)
  */
 public function getClassification(\$namespace = null)
 {
-  \$classifications = \$this->prepareClassifications(\$this->getClassifications());
+  \$classifications = \$this->prepareClassifications(\$this->{$this->getGetterForClassificationCollection()}());
 
   if (is_null(\$namespace)) {
     return \$classifications;

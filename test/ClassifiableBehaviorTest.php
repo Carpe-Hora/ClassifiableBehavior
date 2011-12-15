@@ -74,6 +74,59 @@ EOF;
       $hotPic->addClassification($class['audience']['adult']);
       $hotPic->save();
     }
+  	if (!class_exists('ClassifiableBehaviorTest2')) {
+      $schema = <<<EOF
+<database name="classifiable_behavior_test_overriden_properties">
+  <table name="classification_2">
+    <column name="id" type="INTEGER" primaryKey="true" autoincrement="true" />
+    <column name="user_group" type="VARCHAR" size="255" />
+    <column name="value" type="VARCHAR" size="255" />
+  </table>
+  <table name="classifiable_behavior_test_2">
+    <column name="id" type="INTEGER" primaryKey="true" autoincrement="true" />
+    <column name="name" type="VARCHAR" size="255" />
+    <behavior name="classifiable">
+      <parameter name="classification_table" value="classification_2" />
+      <parameter name="classification_column" value="value" />
+      <parameter name="scope_column" value="user_group" />
+    </behavior>
+  </table>
+</database>
+EOF;
+			PropelQuickBuilder::buildSchema($schema);
+      $class = array();
+      $classifications = array(
+        'size'    => array('big', 'small', 'medium'),
+        'license' => array('MIT', 'GPL', 'BSD', 'commercial', 'creative common'),
+        'format'  => array('jpg', 'png', 'bmp'),
+        'audience'  => array('kid', 'adult'),
+      );
+
+      foreach($classifications as $scope => $values) {
+        foreach ($values as $value) {
+          $c = new Classification2();
+          $c->setUserGroup($scope);
+          $c->setValue($value);
+          $c->save();
+          $class[$scope][$value] = $c;
+        }
+      }
+
+      $teddy = new ClassifiableBehaviorTest2();
+      $teddy->setName('Teddy');
+      $teddy->addClassification2($class['size']['small']);
+      $teddy->addClassification2($class['license']['creative common']);
+      $teddy->addClassification2($class['license']['MIT']);
+      $teddy->addClassification2($class['format']['jpg']);
+      $teddy->save();
+
+      $hotPic = new ClassifiableBehaviorTest2();
+      $hotPic->setName('Hot pic !');
+      $hotPic->addClassification2($class['size']['medium']);
+      $hotPic->addClassification2($class['license']['commercial']);
+      $hotPic->addClassification2($class['audience']['adult']);
+      $hotPic->save();
+    }
   }
 
   public function testActiveQueryMethodsExtists()
@@ -87,8 +140,8 @@ EOF;
   {
     $this->assertTrue(method_exists('ClassifiableBehaviorTest1', 'classify'));
     $this->assertTrue(method_exists('ClassifiableBehaviorTest1', 'isClassified'));
-    $this->assertTrue(method_exists('ClassifiableBehaviorTest1', 'disclose'));
     $this->assertTrue(method_exists('ClassifiableBehaviorTest1', 'getClassification'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest1', 'disclose'));
   }
 
   public function testClassificationParanoidQuery()
@@ -346,5 +399,45 @@ EOF;
     $this->assertTrue($pic->isClassified('size', 'small'));
     $this->assertTrue($pic->isClassified('size', 'big'));
     $this->assertTrue($pic->isClassified('license', 'MIT'));
+  }
+
+/* now with specified parameters */
+
+  public function testOverridePropertiesQueryMethodsExists()
+  {
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2Query', 'filterByClassified'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2Query', 'conditionForDisclosed'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2Query', 'conditionForClassifiable'));
+  }
+
+  public function testOverridePropertiesActiveRecordMethodsExtists()
+  {
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2', 'classify'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2', 'isClassified'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2', 'getClassification'));
+    $this->assertTrue(method_exists('ClassifiableBehaviorTest2', 'disclose'));
+  }
+
+  public function testOverridePropertiesActiveRecoordClassification()
+  {
+    $pic = new ClassifiableBehaviorTest2();
+    $this->assertTrue($pic->isDisclosed());
+    $this->assertEquals(array(), $pic->getClassification());
+
+    $pic->classify(array(
+        'audience'  => array('adult', 'kid'),
+        'size'      => 'big'));
+    $this->assertEquals(2, count($pic->getClassification()));
+    $this->assertTrue($pic->isDisclosed('license'));
+    $this->assertFalse($pic->isDisclosed('size'));
+    $this->assertFalse($pic->isDisclosed('audience'));
+
+    $this->assertTrue($pic->isClassified('size', 'big'));
+    $this->assertTrue($pic->isClassified('audience', 'adult'));
+    $this->assertTrue($pic->isClassified('audience', 'kid'));
+
+    $this->assertTrue($pic->isClassified(array(
+                      'audience'  => array('kid', 'adult'),
+                      'size'      => 'big'), 'and'));
   }
 }
