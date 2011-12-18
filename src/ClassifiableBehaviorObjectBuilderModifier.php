@@ -45,6 +45,18 @@ class ClassifiableBehaviorObjectBuilderModifier
     return $this->behavior->getClassificationTableName();
   }
 
+  public function getClassificationLinkActiveRecordClassname()
+  {
+    $linkTable = $this->behavior->getClassificationLinkTable();
+    return $this->builder->getNewStubObjectBuilder($linkTable)->getClassname();
+  }
+
+  public function getClassificationLinkActiveQueryClassname()
+  {
+    $linkTable = $this->behavior->getClassificationLinkTable();
+    return $this->builder->getNewStubQueryBuilder($linkTable)->getClassname();
+  }
+
   public function getClassificationActiveRecordClassname()
   {
     $classificationTable = $this->getClassificationTable();
@@ -55,6 +67,12 @@ class ClassifiableBehaviorObjectBuilderModifier
   {
     $classificationTable = $this->getClassificationTable();
     return $this->builder->getNewStubQueryBuilder($classificationTable)->getClassname();
+  }
+
+  public function getClassificationPeerClassname()
+  {
+    $classificationTable = $this->getClassificationTable();
+    return $this->builder->getNewStubPeerBuilder($classificationTable)->getClassname();
   }
 
 
@@ -83,9 +101,29 @@ class ClassifiableBehaviorObjectBuilderModifier
     return $this->behavior->getSetterForClassificationColumnForParameter($parameter);
   }
 
+  protected function getGetterForClassificationLink()
+  {
+    return sprintf('get%ss', $this->getClassificationLinkActiveRecordClassname());
+  }
+
+  protected function getGetterForClassification()
+  {
+    return sprintf('get%s', $this->getClassificationActiveRecordClassname());
+  }
+
   protected function getGetterForClassificationCollection()
   {
     return sprintf('get%ss', $this->getClassificationActiveRecordClassname());
+  }
+
+  protected function getClearForClassificationCollection()
+  {
+    return sprintf('clear%ss', $this->getClassificationActiveRecordClassname());
+  }
+
+  protected function getInitForClassificationCollection()
+  {
+    return sprintf('init%ss', $this->getClassificationActiveRecordClassname());
   }
 
   protected function getSetterForClassificationCollection()
@@ -101,6 +139,7 @@ class ClassifiableBehaviorObjectBuilderModifier
   public function objectMethods($builder)
   {
     $this->setbuilder($builder);
+    $cheduleForDeletionProperty = sprintf('%ssScheduledForDeletion', lcfirst($this->getClassificationActiveRecordClassname()));
 
     return <<<EOF
 /**
@@ -119,18 +158,130 @@ class ClassifiableBehaviorObjectBuilderModifier
  * @param String  \$classification   classification name if namespace is provided.
  * @return {\$this->objectClassname}
  */
-public function classify(\$namespace, \$classification = null)
+public function classify(\$namespace, \$classification = null, \$con = null)
 {
+  if (is_null(\$con) && \$classification instanceof PropelPDO) {
+    \$con = \$classification;
+    \$classification = null;
+  }
+
   \$classifications = \$this->prepareClassifications(\$namespace, \$classification);
   \$mine = \$this->prepareClassifications(\$this->{$this->getGetterForClassificationCollection()}());
   foreach (\$classifications as \$ns => \$classes) {
     \$diff = isset(\$mine[\$ns]) ?  array_diff(\$classes, \$mine[\$ns]) : \$classes;
     \$new = array_intersect(\$classes, \$diff);
     foreach (\$new as \$classification) {
-      \$this->{$this->getAddClassificationMethod()}(\$classification);
+      \$this->{$this->getAddClassificationMethod()}(\$classification, \$con);
     }
   }
   return \$this;
+}
+
+/**
+ * disclose an object.
+ *
+ * @param String  \$namespace        classification \$namespace.
+ * @param String  \$classification   classification name if namespace is provided.
+ * @return {$this->objectClassname}
+ */
+public function disclose(\$namespace = null, \$classification = null)
+{
+  // disclose all ?
+  if (is_null(\$namespace)) {
+    \$this->{$cheduleForDeletionProperty} = \$this->{$this->getGetterForClassificationLink()}();
+    \$this->{$this->getInitForClassificationCollection()}();
+
+    return \$this;
+  }
+
+  // disclose on a namespace
+  if (is_null(\$classification) && is_string(\$namespace)) {
+    \$namespace = {$this->peerClassname}::normalizeScopeName(\$namespace);
+    \$toRemove = array();
+    foreach (\$this->{$this->getGetterForClassificationLink()}() as \$link) {
+      if (\$namespace === \$link->{$this->getGetterForClassification()}()->{$this->getGetterForClassificationColumnForParameter('scope_column')}()) {
+        \$toRemove[] = \$link;
+      }
+    }
+
+    \$this->doRemoveClassificationLinks(\$toRemove);
+
+    return \$this;
+  }
+
+  // list of classification items ?
+  if (\$namespace instanceof PropelCollection) {
+    throw new PropelException('please use "{$this->getSetterForClassificationCollection()}" to manage collections');
+  }
+
+  // case prepareClassification compatible arguments
+  \$classifications = \$this->prepareClassifications(\$namespace, \$classification);
+
+  // retrieve links
+  foreach (\$this->{$this->getGetterForClassificationLink()}() as \$link) {
+    \$ns = \$link->{$this->getGetterForClassification()}()->{$this->getGetterForClassificationColumnForParameter('scope_column')}();
+    \$val = \$link->{$this->getGetterForClassification()}()->{$this->getGetterForClassificationColumnForParameter('classification_column')}();
+    if (  // namespace
+          isset(\$classifications[\$ns]) &&
+          // value
+          in_array(\$val, \$classifications[\$ns])) {
+      \$toRemove[] = \$link;
+    }
+  }
+
+    // remove it
+  \$this->doRemoveClassificationLinks(\$toRemove);
+
+  return \$this;
+}
+
+/**
+ * actualy remove classifications from current instance.
+ */
+protected function doRemoveClassificationLinks(\$classificationLinks)
+{
+  // transform into collection
+  if (!(\$classificationLinks instanceof PropelCollection)) {
+    \$collection = new PropelObjectCollection();
+    \$collection->setModel("{$this->getClassificationLinkActiveRecordClassname()}");
+    \$collection->setData(\$classificationLinks);
+    \$classificationLinks = \$collection;
+  }
+
+  \$classificationLinkCollection = \$this->{$this->getGetterForClassificationLink()}();
+  \$classificationCollection = \$this->{$this->getGetterForClassificationCollection()}();
+  // easy way to access collection index
+  \$link_array = array();
+  \$class_array = array();
+  foreach (\$classificationLinkCollection as \$index => \$c) {
+    \$link_array[\$index] = \$c->hashCode();
+  }
+  foreach (\$classificationCollection as \$index => \$c) {
+    \$class_array[\$index] = \$c->hashCode();
+  }
+
+  // prepare for deletion collection
+  if (is_null(\$this->{$cheduleForDeletionProperty})) {
+    \$this->{$cheduleForDeletionProperty} = \$classificationLinks;
+  }
+  else {
+    foreach (\$classificationLinks->diff(\$this->{$cheduleForDeletionProperty}) as \$removeClass) {
+      \$this->{$cheduleForDeletionProperty}->append(\$removeClass);
+    }
+  }
+
+  foreach (\$classificationLinks as \$removeClass) {
+    // in link collection
+    if (false !== (\$index = array_search(\$removeClass->hashCode(), \$link_array))) {
+      \$classificationLinkCollection->remove(\$index);
+      unset(\$link_array[\$index]);
+    }
+    // in classification collection
+    if (false !== (\$index = array_search(\$removeClass->{$this->getGetterForClassification()}()->hashCode(), \$class_array))) {
+      \$classificationCollection->remove(\$index);
+      unset(\$class_array[\$index]);
+    }
+  }
 }
 
 /**
