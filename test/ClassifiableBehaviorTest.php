@@ -432,6 +432,30 @@ EOF;
     $this->assertTrue($pic->isDisclosed());
   }
 
+  public function testDiscloseLoop()
+  {
+    $class = $this->getClassificationObjects();
+    $pic = new ClassifiableBehaviorTest1();
+    $pic->setName('disclose test');
+
+    $pic->disclose('audience');
+    $pic->classify('audience', 'adult');
+    $this->assertEquals(array(
+      'audience'  => array('adult' => $class['audience']['adult']),), $pic->getClassification());
+
+    $pic->disclose('audience');
+    $pic->classify('audience', 'kid');
+    $this->assertEquals(array(
+      'audience'  => array('kid' => $class['audience']['kid']),), $pic->getClassification());
+
+    $pic->disclose('size');
+    $pic->classify('size', 'small');
+    $this->assertEquals(array(
+      'audience'  => array('kid' => $class['audience']['kid']),
+      'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
+
+  }
+
 /* now with specified parameters */
 
   public function testOverridePropertiesQueryMethodsExists()
