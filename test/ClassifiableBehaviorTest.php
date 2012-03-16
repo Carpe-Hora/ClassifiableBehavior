@@ -8,16 +8,6 @@
  * @license    MIT License
  */
 
-$_SERVER['PROPEL_DIR'] = dirname(__FILE__) . '/../../../../plugins/sfPropelORMPlugin/lib/vendor/propel/';
-$propel_dir = isset($_SERVER['PROPEL_DIR']) ? $_SERVER['PROPEL_DIR'] : dirname(__FILE__) . '/../../../../../plugins/sfPropelORMPlugin/lib/vendor/propel/';
-$behavior_dir = file_exists(__DIR__ . '/../src/')
-                    ? __DIR__ . '/../src'
-                    : $propel_dir . '/generator/lib/behavior/classifiable';
-
-require_once $propel_dir . '/runtime/lib/Propel.php';
-require_once $propel_dir . '/generator/lib/util/PropelQuickBuilder.php';
-require_once $propel_dir . '/generator/lib/util/PropelPHPParser.php';
-require_once $behavior_dir . '/ClassifiableBehavior.php';
 
 /**
  * Test for ClassifiableBehavior
