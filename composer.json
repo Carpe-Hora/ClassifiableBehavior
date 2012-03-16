@@ -1,0 +1,18 @@
+{
+  "name": "CarpeHora/ClassifiableBehavior",
+  "description": "ClassifiableBehavior is a propel behavior allowing to tag on a list of user defined scopes. kind of Ressource Access Control.",
+  "keywords": ["Propel", "Taggable", "Classify", "Classifiable", "Ressource Access Control"],
+  "homepage": "http://carpe-hora.github.com/ClassifiableBehavior/",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Julien Muetton",
+      "email": "julien_muetton@carpe-hora.com",
+      "homepage": "http://www.carpe-hora.com"
+    }
+  ],
+  "require": {
+    "php": ">=5.2.4",
+    "propel/propel1": ">=1.6.4"
+  }
+}
