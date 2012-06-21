@@ -226,6 +226,9 @@ EOF;
         'SELECT {$pks} FROM {$this->getClassifiactionLinkTableCommonname()} '. \$alias . '_link '."\n".
         'JOIN {$this->getParameter('classification_table')} '. \$alias . ' '."\n".
         'ON ('. \$alias . '.id = '. \$alias . '_link.{$this->getParameter('classification_table')}_id '.
+        ') '."\n".
+        'WHERE ( '.
+            \$alias .'.{$this->getParameter('scope_column')} = ? '."\n".
 EOF;
     // @todo optimize to check id first
     foreach($this->behavior->getTable()->getPrimaryKey() as $key => $column) {
@@ -234,9 +237,6 @@ EOF;
 EOF;
     }
     $script .= <<<EOF
-        ') '."\n".
-        'WHERE ( '.
-            \$alias .'.{$this->getParameter('scope_column')} = ? '."\n".
         ') GROUP BY {$pks}' .
         ')';
 

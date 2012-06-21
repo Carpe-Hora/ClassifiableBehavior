@@ -45,7 +45,7 @@ EOF;
         'size'    => array('big', 'small', 'medium'),
         'license' => array('MIT', 'GPL', 'BSD', 'commercial', 'creative common'),
         'format'  => array('jpg', 'png', 'bmp'),
-        'audience'  => array('kid', 'adult'),
+        'intended audience'  => array('kid', 'adult'),
       );
 
       foreach($classifications as $scope => $values) {
@@ -70,7 +70,7 @@ EOF;
       $hotPic->setName('Hot pic !');
       $hotPic->addClassification2($class['size']['medium']);
       $hotPic->addClassification2($class['license']['commercial']);
-      $hotPic->addClassification2($class['audience']['adult']);
+      $hotPic->addClassification2($class['intended audience']['adult']);
       $hotPic->save();
     }
   	if (!class_exists('ClassifiableBehaviorTest1')) {
@@ -89,7 +89,7 @@ EOF;
         'size'    => array('big', 'small', 'medium'),
         'license' => array('MIT', 'GPL', 'BSD', 'commercial', 'creative common'),
         'format'  => array('jpg', 'png', 'bmp'),
-        'audience'  => array('kid', 'adult'),
+        'intended audience'  => array('kid', 'adult'),
       );
 
       foreach($classifications as $scope => $values) {
@@ -114,7 +114,7 @@ EOF;
       $hotPic->setName('Hot pic !');
       $hotPic->addClassification($class['size']['medium']);
       $hotPic->addClassification($class['license']['commercial']);
-      $hotPic->addClassification($class['audience']['adult']);
+      $hotPic->addClassification($class['intended audience']['adult']);
       $hotPic->save();
     }
   }
@@ -122,9 +122,9 @@ EOF;
   public function getClassificationObjects()
   {
     return array(
-      'audience' => array(
-          'kid' => ClassificationQuery::create()->filterByScope('audience')->filterByClassification('kid')->findOne(),
-          'adult' => ClassificationQuery::create()->filterByScope('audience')->filterByClassification('adult')->findOne(),),
+      'intended audience' => array(
+          'kid' => ClassificationQuery::create()->filterByScope('intended audience')->filterByClassification('kid')->findOne(),
+          'adult' => ClassificationQuery::create()->filterByScope('intended audience')->filterByClassification('adult')->findOne(),),
       'size' => array(
           'small' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('small')->findOne(),
           'medium' => ClassificationQuery::create()->filterByScope('size')->filterByClassification('medium')->findOne(),
@@ -151,7 +151,7 @@ EOF;
   {
     $class = $this->getClassificationObjects();
     $paranoidAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', $class['audience']['adult'], 'and', true)
+      ->filterByClassified('intended audience', $class['intended audience']['adult'], 'and', true)
       ->orderByName()
       ->find();
 
@@ -171,7 +171,7 @@ EOF;
     $class = $this->getClassificationObjects();
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', $class['audience']['adult'], 'and', false)
+      ->filterByClassified('intended audience', $class['intended audience']['adult'], 'and', false)
       ->orderByName()
       ->find();
 
@@ -183,7 +183,7 @@ EOF;
   public function testFilterByDisclosed()
   {
     $disclosedPublicPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByDisclosed('audience')
+      ->filterByDisclosed('intended audience')
       ->orderByName()
       ->find();
 
@@ -196,7 +196,7 @@ EOF;
     $class = $this->getClassificationObjects();
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', $class['audience']['adult'], 'and', false)
+      ->filterByClassified('intended audience', $class['intended audience']['adult'], 'and', false)
       ->filterByClassified('size', $class['size']['medium'], 'and', false)
       ->orderByName()
       ->find();
@@ -205,7 +205,7 @@ EOF;
     $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', $class['audience']['adult'], 'and', false)
+      ->filterByClassified('intended audience', $class['intended audience']['adult'], 'and', false)
       ->filterByClassified('size', array($class['size']['medium'], $class['size']['small']), 'or', false)
       ->orderByName()
       ->find();
@@ -215,7 +215,7 @@ EOF;
     $this->assertEquals('Teddy', $disclosedAdultPics[1]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', $class['audience']['adult'], 'and', false)
+      ->filterByClassified('intended audience', $class['intended audience']['adult'], 'and', false)
       ->filterByClassified('size', array($class['size']['medium'], $class['size']['small']), 'and', false)
       ->orderByName()
       ->find();
@@ -233,25 +233,25 @@ EOF;
   {
     $class = $this->getClassificationObjects();
 
-    // $q->prepareClassifications(array('audience' => array('adult', 'kid'), 'size' => array('small')));
-    $res = ClassifiableBehaviorTest1Peer::prepareClassifications(array('audience' => array('adult', 'kid'), 'size' => array('small')));
+    // $q->prepareClassifications(array('intended audience' => array('adult', 'kid'), 'size' => array('small')));
+    $res = ClassifiableBehaviorTest1Peer::prepareClassifications(array('intended audience' => array('adult', 'kid'), 'size' => array('small')));
     $this->assertEquals(2, count($res));
-    $this->assertTrue(isset($res['audience']));
+    $this->assertTrue(isset($res['intended audience']));
     $this->assertTrue(isset($res['size']));
-    $this->assertEquals('audience', $res['audience']['adult']->getScope());
-    $this->assertEquals('adult', $res['audience']['adult']->getClassification());
-    $this->assertEquals('audience', $res['audience']['kid']->getScope());
-    $this->assertEquals('kid', $res['audience']['kid']->getClassification());
+    $this->assertEquals('intended audience', $res['intended audience']['adult']->getScope());
+    $this->assertEquals('adult', $res['intended audience']['adult']->getClassification());
+    $this->assertEquals('intended audience', $res['intended audience']['kid']->getScope());
+    $this->assertEquals('kid', $res['intended audience']['kid']->getClassification());
     $this->assertEquals('size', $res['size']['small']->getScope());
     $this->assertEquals('small', $res['size']['small']->getClassification());
-    // $q->prepareClassifications('audience', array('adult', 'kid'));
-    $res = ClassifiableBehaviorTest1Peer::prepareClassifications('audience', array('adult', 'kid'));
-    $this->assertSame(array('audience' => array(
-                                'adult' => $class['audience']['adult'],
-                                'kid' => $class['audience']['kid'])), $res);
-    // $q->prepareClassifications('audience', 'kid');
-    $res = ClassifiableBehaviorTest1Peer::prepareClassifications('audience', 'kid');
-    $this->assertSame(array('audience' => array('kid' => $class['audience']['kid'])), $res);
+    // $q->prepareClassifications('intended audience', array('adult', 'kid'));
+    $res = ClassifiableBehaviorTest1Peer::prepareClassifications('intended audience', array('adult', 'kid'));
+    $this->assertSame(array('intended audience' => array(
+                                'adult' => $class['intended audience']['adult'],
+                                'kid' => $class['intended audience']['kid'])), $res);
+    // $q->prepareClassifications('intended audience', 'kid');
+    $res = ClassifiableBehaviorTest1Peer::prepareClassifications('intended audience', 'kid');
+    $this->assertSame(array('intended audience' => array('kid' => $class['intended audience']['kid'])), $res);
     // $q->prepareClassifications('size', array('small', 'medium'));
     $res = ClassifiableBehaviorTest1Peer::prepareClassifications('size', array('small', 'medium'));
     $this->assertSame(array('size' => array('small' => $class['size']['small'], 'medium' => $class['size']['medium'])), $res);
@@ -260,7 +260,7 @@ EOF;
   public function testFilterByClassificationNames()
   {
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', 'adult', 'and', false)
+      ->filterByClassified('intended audience', 'adult', 'and', false)
       ->filterByClassified('size', 'medium', 'and', false)
       ->orderByName()
       ->find();
@@ -269,7 +269,7 @@ EOF;
     $this->assertEquals('Hot pic !', $disclosedAdultPics[0]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', 'adult', 'and', false)
+      ->filterByClassified('intended audience', 'adult', 'and', false)
       ->filterByClassified('size', array('small', 'medium'), 'or', false)
       ->orderByName()
       ->find();
@@ -279,7 +279,7 @@ EOF;
     $this->assertEquals('Teddy', $disclosedAdultPics[1]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified('audience', 'adult', 'and', false)
+      ->filterByClassified('intended audience', 'adult', 'and', false)
       ->filterByClassified('size', array('small', 'medium'), 'and', false)
       ->orderByName()
       ->find();
@@ -290,7 +290,7 @@ EOF;
   public function testFilterBySimpleArray()
   {
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified(array('audience' =>  'adult'), 'and', false)
+      ->filterByClassified(array('intended audience' =>  'adult'), 'and', false)
       ->filterByClassified(array('size' =>  'medium'), 'and', false)
       ->orderByName()
       ->find();
@@ -306,7 +306,7 @@ EOF;
     $this->assertEquals('Teddy', $licensed[0]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified(array('audience' =>  'adult'), 'and', false)
+      ->filterByClassified(array('intended audience' =>  'adult'), 'and', false)
       ->filterByClassified(array('size' => array('small',  'medium')), 'or', false)
       ->orderByName()
       ->find();
@@ -316,7 +316,7 @@ EOF;
     $this->assertEquals('Teddy', $disclosedAdultPics[1]->getName());
 
     $disclosedAdultPics = ClassifiableBehaviorTest1Query::create()
-      ->filterByClassified(array('audience' =>  'adult'), 'and', false)
+      ->filterByClassified(array('intended audience' =>  'adult'), 'and', false)
       ->filterByClassified(array('size' => array('small',  'medium')), 'and', false)
       ->orderByName()
       ->find();
@@ -325,7 +325,7 @@ EOF;
 
     $adultOrSmallPics = ClassifiableBehaviorTest1Query::create()
       ->filterByClassified(array(
-          'audience' =>  'adult',           // Only Hot pic match
+          'intended audience' =>  'adult',           // Only Hot pic match
           'license' => array('MIT', 'creative common')   // Only Teddy match
           ), 'AND', true)
       ->orderByName()
@@ -341,31 +341,31 @@ EOF;
     $this->assertEquals(array(), $pic->getClassification());
 
     $pic->classify(array(
-        'audience'  => array('adult', 'kid'),
+        'intended audience'  => array('adult', 'kid'),
         'size'      => 'big'));
     $this->assertEquals(2, count($pic->getClassification()));
     $this->assertTrue($pic->isDisclosed('license'));
     $this->assertFalse($pic->isDisclosed('size'));
-    $this->assertFalse($pic->isDisclosed('audience'));
+    $this->assertFalse($pic->isDisclosed('intended audience'));
 
     $this->assertTrue($pic->isClassified('size', 'big'));
-    $this->assertTrue($pic->isClassified('audience', 'adult'));
-    $this->assertTrue($pic->isClassified('audience', 'kid'));
+    $this->assertTrue($pic->isClassified('intended audience', 'adult'));
+    $this->assertTrue($pic->isClassified('intended audience', 'kid'));
     $this->assertFalse($pic->isClassified('size', 'small'));
     $this->assertTrue($pic->isClassified(array(
-                      'audience'  => array('kid', 'adult'),
+                      'intended audience'  => array('kid', 'adult'),
                       'size'      => array('big', 'small')), 'or'));
     $this->assertFalse($pic->isClassified(array(
-                      'audience'  => array('kid', 'adult'),
+                      'intended audience'  => array('kid', 'adult'),
                       'size'      => array('big', 'small')), 'and'));
     $this->assertFalse($pic->isClassified(array(
-                      'audience'  => array('kid', 'adult'),
+                      'intended audience'  => array('kid', 'adult'),
                       'size'      => array('big', 'small')), 'xor'));
     $this->assertTrue($pic->isClassified(array(
-                      'audience'  => array('kid'),
+                      'intended audience'  => array('kid'),
                       'size'      => array('big', 'small')), 'xor'));
     $this->assertTrue($pic->isClassified(array(
-                      'audience'  => array('kid', 'adult'),
+                      'intended audience'  => array('kid', 'adult'),
                       'size'      => 'big'), 'and'));
     $this->assertFalse($pic->isClassified(array(
                       'license' => 'MIT'), 'and', true));
@@ -387,34 +387,34 @@ EOF;
     $pic = new ClassifiableBehaviorTest1();
     $pic->setName('disclose test');
     $pic->classify(array(
-      'audience'  => array($class['audience']['adult'], $class['audience']['kid']),
+      'intended audience'  => array($class['intended audience']['adult'], $class['intended audience']['kid']),
       'size'      => array($class['size']['small'])));
 
     $this->assertEquals(array(
-      'audience'  => array('adult' => $class['audience']['adult'], 'kid' => $class['audience']['kid']),
+      'intended audience'  => array('adult' => $class['intended audience']['adult'], 'kid' => $class['intended audience']['kid']),
       'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
 
     $pic->disclose();
     $this->assertTrue($pic->isDisclosed());
 
     $pic->classify(array(
-      'audience'  => array($class['audience']['adult'], $class['audience']['kid']),
+      'intended audience'  => array($class['intended audience']['adult'], $class['intended audience']['kid']),
       'size'      => array($class['size']['small'])));
 
-    $pic->disclose('audience');
+    $pic->disclose('intended audience');
     $this->assertEquals(array(
       'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
 
     $pic->classify(array(
-      'audience'  => array($class['audience']['adult'], $class['audience']['kid']),
+      'intended audience'  => array($class['intended audience']['adult'], $class['intended audience']['kid']),
       'size'      => array($class['size']['small'])));
 
-    $pic->disclose('audience', 'kid');
+    $pic->disclose('intended audience', 'kid');
     $this->assertEquals(array(
-      'audience'  => array('adult' => $class['audience']['adult']),
+      'intended audience'  => array('adult' => $class['intended audience']['adult']),
       'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
 
-    $pic->disclose('audience');
+    $pic->disclose('intended audience');
     $this->assertEquals(array(
       'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
 
@@ -428,20 +428,20 @@ EOF;
     $pic = new ClassifiableBehaviorTest1();
     $pic->setName('disclose test');
 
-    $pic->disclose('audience');
-    $pic->classify('audience', 'adult');
+    $pic->disclose('intended audience');
+    $pic->classify('intended audience', 'adult');
     $this->assertEquals(array(
-      'audience'  => array('adult' => $class['audience']['adult']),), $pic->getClassification());
+      'intended audience'  => array('adult' => $class['intended audience']['adult']),), $pic->getClassification());
 
-    $pic->disclose('audience');
-    $pic->classify('audience', 'kid');
+    $pic->disclose('intended audience');
+    $pic->classify('intended audience', 'kid');
     $this->assertEquals(array(
-      'audience'  => array('kid' => $class['audience']['kid']),), $pic->getClassification());
+      'intended audience'  => array('kid' => $class['intended audience']['kid']),), $pic->getClassification());
 
     $pic->disclose('size');
     $pic->classify('size', 'small');
     $this->assertEquals(array(
-      'audience'  => array('kid' => $class['audience']['kid']),
+      'intended audience'  => array('kid' => $class['intended audience']['kid']),
       'size'      => array('small' => $class['size']['small'])), $pic->getClassification());
 
   }
@@ -470,19 +470,19 @@ EOF;
     $this->assertEquals(array(), $pic->getClassification());
 
     $pic->classify(array(
-        'audience'  => array('adult', 'kid'),
+        'intended audience'  => array('adult', 'kid'),
         'size'      => 'big'));
     $this->assertEquals(2, count($pic->getClassification()));
     $this->assertTrue($pic->isDisclosed('license'));
     $this->assertFalse($pic->isDisclosed('size'));
-    $this->assertFalse($pic->isDisclosed('audience'));
+    $this->assertFalse($pic->isDisclosed('intended audience'));
 
     $this->assertTrue($pic->isClassified('size', 'big'));
-    $this->assertTrue($pic->isClassified('audience', 'adult'));
-    $this->assertTrue($pic->isClassified('audience', 'kid'));
+    $this->assertTrue($pic->isClassified('intended audience', 'adult'));
+    $this->assertTrue($pic->isClassified('intended audience', 'kid'));
 
     $this->assertTrue($pic->isClassified(array(
-                      'audience'  => array('kid', 'adult'),
+                      'intended audience'  => array('kid', 'adult'),
                       'size'      => 'big'), 'and'));
   }
 }
